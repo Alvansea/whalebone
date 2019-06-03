@@ -1,6 +1,6 @@
 {
   "name": "whalebone",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "nodejs module loader",
   "main": "index.js",
   "scripts": {
@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/Alvansea/whalebone/issues"
   },
-  "homepage": "https://github.com/Alvansea/whalebone#readme"
+  "homepage": "https://github.com/Alvansea/whalebone#readme",
+  "devDependencies": {
+    "chai": "^4.2.0"
+  }
 }

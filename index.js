@@ -1,63 +1,43 @@
 'use strict';
 
-var fs = require('fs');
-var path = require('path');
+const fs = require('fs');
+const path = require('path');
 
-class Whalebone {
+const importModules = function(dirs, digestor, options) {
 
-  constructor() {
-    this.assets = {};
+  options = options || {};
+  options.history = options.history || [];
+
+  if(dirs instanceof Array) {
+    dirs.forEach((dir) => {
+      importModules(dir, digestor, options);
+    })
+    return;
   }
 
-  asset(name, value) {
-    if(!this.assets[name]) {
-      this.assets[name] = value || {};
-    }
-    return this.assets[name];
-  }
+  let fullpath = dirs;
 
-  /**
-   *  import dir(s) and digest the files using digestor
-   */
-  import(dirs, digestor, options) {
-
-    if(dirs instanceof Array) {
-      dirs.forEach((dir) => {
-        this.imoprt(dir, options);
-      })
-      return;
-    }
-
-    let fullpath = dirs;
-    if(fs.lstatSync(fullpath).isFile()) {
+  if(fs.lstatSync(fullpath).isFile()) {
+    if(options.history.indexOf(fullpath) < 0) {
+      options.history.push(fullpath);
       let mod = require(fullpath);
-      digestor.call(this, mod, options);
-    } else {
-      let filter;
-      if(options && options.filter) {
-        filter = options.filter;
-      } else {
-        filter = function(filename) {
-          return filename[0] != '.';
-        }
-      }
-      fs.readdirSync(fullpath)
-        .filter(filter)
-        .sort()
-        .forEach((filename) => {
-          const mod = require(path.join(fullpath, filename));
-          digestor.call(this, mod, options);
-        });
+      digestor.call(options.caller, mod, options);
     }
-  }
+  } else {
+    let arr = fs.readdirSync(fullpath)
+      .filter(function(filename) {
+        return filename[0] != '.';
+      });
 
-  /**
-   *  export assets using exportor
-   */
-  export(exportor, options) {
-    return exportor.call(this, options);
+    if(typeof(options.filter) == 'function') {
+      arr = arr.filter(options.filter);
+    }
+    
+    arr.sort()
+      .forEach((filename) => {
+        importModules(path.join(fullpath, filename), digestor, options);
+      });
   }
 }
 
-// singleton
-exports = module.exports = new Whalebone();
+exports.import = importModules;
